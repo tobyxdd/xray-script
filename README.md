@@ -11,36 +11,37 @@ Basic installer & manager for Xray server with VLESS + Reality.
 ## Quick Start
 
 ```bash
-chmod +x install.sh
-sudo ./install.sh install
+curl -fsSL https://raw.githubusercontent.com/tobyxdd/xray-script/master/install.sh -o xray_install.sh
+chmod +x xray_install.sh
+sudo ./xray_install.sh install
 ```
 
 You can also pass values directly:
 
 ```bash
-sudo ./install.sh install --port 443 --sni some-domain.com --server 1.2.3.4
+sudo ./xray_install.sh install --port 443 --sni some-domain.com --server 1.2.3.4
 ```
 
 After install, print the client URL:
 
 ```bash
-sudo ./install.sh url
-sudo ./install.sh url --qr
+sudo ./xray_install.sh url
+sudo ./xray_install.sh url --qr
 ```
 
 ## Commands
 
 ```bash
-sudo ./install.sh status
-sudo ./install.sh restart
-sudo ./install.sh logs
-sudo ./install.sh set-sni example.com
-sudo ./install.sh set-server 1.2.3.4
-sudo ./install.sh set-port 8443
-sudo ./install.sh rotate-secrets
-sudo ./install.sh backup
-sudo ./install.sh show-state
-sudo ./install.sh uninstall
+sudo ./xray_install.sh status
+sudo ./xray_install.sh restart
+sudo ./xray_install.sh logs
+sudo ./xray_install.sh set-sni example.com
+sudo ./xray_install.sh set-server 1.2.3.4
+sudo ./xray_install.sh set-port 8443
+sudo ./xray_install.sh rotate-secrets
+sudo ./xray_install.sh backup
+sudo ./xray_install.sh show-state
+sudo ./xray_install.sh uninstall
 ```
 
 ## Notes
