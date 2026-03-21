@@ -3,6 +3,7 @@
 Basic installer & manager for Xray server with VLESS + Reality.
 
 - Installs or updates `Xray`
+- Enables `BBR` congestion control
 - Generates random `UUID`, `Reality` keys, and `Short ID` on first install
 - Saves those values in `/etc/xray-reality/state.env` so reruns do not break clients
 - Management commands for post-install tasks

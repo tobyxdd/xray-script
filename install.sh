@@ -6,6 +6,7 @@ SCRIPT_NAME="$(basename "$0")"
 STATE_DIR="/etc/xray-reality"
 STATE_FILE="${STATE_DIR}/state.env"
 BACKUP_DIR="${STATE_DIR}/backups"
+BBR_SYSCTL_FILE="/etc/sysctl.d/99-xray-reality-bbr.conf"
 CONFIG_DIR="/usr/local/etc/xray"
 CONFIG_FILE="${CONFIG_DIR}/config.json"
 XRAY_INSTALL_URL="https://github.com/XTLS/Xray-install/raw/main/install-release.sh"
@@ -44,6 +45,7 @@ Usage:
 Notes:
   - First install generates random UUID, Reality keys, and Short ID.
   - Reruns reuse saved values from ${STATE_FILE}.
+  - Install enables BBR congestion control when the kernel supports it.
   - Use rotate-secrets if you want brand new client credentials.
 EOF
 }
@@ -109,6 +111,46 @@ prompt_default() {
 ensure_directories() {
 	mkdir -p "${STATE_DIR}" "${BACKUP_DIR}" "${CONFIG_DIR}"
 	chmod 700 "${STATE_DIR}"
+}
+
+configure_bbr() {
+	local available_controls current_control
+
+	require_command sysctl
+
+	cat >"${BBR_SYSCTL_FILE}" <<EOF
+net.core.default_qdisc = fq
+net.ipv4.tcp_congestion_control = bbr
+EOF
+
+	if ! sysctl -q -p "${BBR_SYSCTL_FILE}" >/dev/null 2>&1; then
+		warn "Failed to apply BBR settings immediately. The sysctl file was still written to ${BBR_SYSCTL_FILE}."
+		return 0
+	fi
+
+	available_controls="$(sysctl -n net.ipv4.tcp_available_congestion_control 2>/dev/null || true)"
+	current_control="$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || true)"
+
+	if [[ "${available_controls}" != *bbr* ]]; then
+		warn "Kernel does not report BBR as available."
+		return 0
+	fi
+
+	if [[ "${current_control}" == "bbr" ]]; then
+		say "BBR congestion control enabled."
+	else
+		warn "BBR settings were written, but the active congestion control is still ${current_control:-unknown}."
+	fi
+}
+
+cleanup_bbr() {
+	if [[ -f "${BBR_SYSCTL_FILE}" ]]; then
+		rm -f "${BBR_SYSCTL_FILE}"
+		say "Removed ${BBR_SYSCTL_FILE}"
+		if command_exists sysctl; then
+			sysctl --system >/dev/null 2>&1 || warn "Failed to reload sysctl settings after removing BBR config."
+		fi
+	fi
 }
 
 detect_public_ipv4() {
@@ -541,6 +583,7 @@ install_flow() {
 	require_root
 	require_install_capabilities
 	install_packages
+	configure_bbr
 	install_or_update_xray
 	ensure_state
 	apply_install_overrides "$@"
@@ -633,6 +676,8 @@ uninstall_flow() {
 		rm -rf "${STATE_DIR}"
 		say "Removed ${STATE_DIR}"
 	fi
+
+	cleanup_bbr
 
 	say "Uninstall complete."
 }
