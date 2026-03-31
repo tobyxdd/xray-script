@@ -231,10 +231,10 @@ extract_x25519_field() {
 
 	case "${field}" in
 	private)
-		printf '%s\n' "${key_output}" | awk -F': *' '$1 == "Private key" || $1 == "PrivateKey" { print $2; exit }'
+		printf '%s\n' "${key_output}" | awk -F': *' 'tolower($1) ~ /private/ { print $2; exit }'
 		;;
 	public)
-		printf '%s\n' "${key_output}" | awk -F': *' '$1 == "Public key" || $1 == "PublicKey" || $1 == "Password" { print $2; exit }'
+		printf '%s\n' "${key_output}" | awk -F': *' 'tolower($1) ~ /public/ { print $2; exit }'
 		;;
 	*)
 		die "Unknown x25519 field requested: ${field}"
